@@ -181,49 +181,52 @@ window.addEventListener('DOMContentLoaded', function() {
             this.parent.append(element);
         }
     }
+    const postData = async (url, data) => { // ОЧЕНЬ ВАЖНАЯ ЧАСТЬ
+        const res = await fetch(url, {
+            method: "POST",
+            headers: {
+                'Content-type': 'application/json'
+            },
+            body: data
+        });
 
-    new MenuCard(
-        "img/tabs/vegy.jpg",
-        "vegy",
-        'Меню "Фитнес"',
-        'Меню "Фитнес" - это новый подход к приготовлению блюд: больше свежих овощей и фруктов. Продукт активных и здоровых людей. Это абсолютно новый продукт с оптимальной ценой и высоким качеством!',
-        9,
-        ".menu .container"
-    ).render();
+        return await res.json();
+    };
 
-    new MenuCard(
-        "img/tabs/post.jpg",
-        "post",
-        'Меню "Постное"',
-        'Меню “Постное” - это тщательный подбор ингредиентов: полное отсутствие продуктов животного происхождения, молоко из миндаля, овса, кокоса или гречки, правильное количество белков за счет тофу и импортных вегетарианских стейков.',
-        14,
-        ".menu .container"
-    ).render();
+    const getResource = async (url) => { // ОЧЕНЬ ВАЖНАЯ ЧАСТЬ
+        const res = await fetch(url);
 
-    new MenuCard(
-        "img/tabs/elite.jpg",
-        "elite",
-        'Меню “Премиум”',
-        'В меню “Премиум” мы используем не только красивый дизайн упаковки, но и качественное исполнение блюд. Красная рыба, морепродукты, фрукты - ресторанное меню без похода в ресторан!',
-        21,
-        ".menu .container"
-    ).render();
+        if (!res.ok){
+            throw new Error(`Couldn't fetch ${url}, status: ${res.status}`); // throw -"выкидывает" ошибку
+        }
+
+        return await res.json();
+    };
+    
+    getResource('http://localhost:3000/menu')
+    .then(data => {
+        data.forEach(({img, altimg, title, descr, price}) => { //Деструктуризация объекта - вытаскивание свойств объекта, как аргументов для функции
+            new MenuCard(img, altimg, title, descr, price, '.menu .container').render();
+        });
+    });
 
     // Forms
 
     const forms= document.querySelectorAll('form');
 
-    const message = {
-        loading: 'img/form/original.svg',
-        success: 'Спасибо! Скоро мы с вами свяжемся',
-        failure: 'Что-то пошло не так...'
-    };
+        const message = {
+            loading: 'img/form/original.svg',
+            success: 'Спасибо! Скоро мы с вами свяжемся',
+            failure: 'Что-то пошло не так...'
+        };
 
-forms.forEach(item => {
-    postData(item);
-});
+    forms.forEach(item => {
+        bindPostData(item);
+    });
 
-    function postData(form) {
+
+
+    function bindPostData(form) {
         form.addEventListener('submit', (e) => {
             e.preventDefault();
 
@@ -238,20 +241,15 @@ forms.forEach(item => {
           
             const formData= new FormData(form);
 
-            const object = {};
+            const json = JSON.stringify(Object.fromEntries(formData.entries())); // В ДАННОЙ ЧАСТИ КОДА МЫ ПРЕОБРАЗУЕМ ВХОДЯЩИЕ ДАННЫЕ В JSON ФОРМАТ, а затем возвращаем преобразованный объект к классическому объекту
 
-            formData.forEach(function(value,key) {
-                object[key] =value;
-            });
 
-              
-            fetch('server.php', {
-                method: "POST",
-                headers: {
-                    'Content-type': 'application/json'
-                },
-                body: JSON.stringify(object)
-            }).then(data => data.text())
+            // formData.forEach(function(value,key) {
+            //     object[key] =value;
+            // });
+
+
+            postData('http://localhost:3000/requests', json)
             .then(data => {
                     console.log(data);
                     showThanksModal(message.success);
@@ -275,6 +273,8 @@ forms.forEach(item => {
             // });
         });
     }
+
+
 
     function showThanksModal(message) {
         const prevModalDialog = document.querySelector('.modal__dialog');
@@ -301,8 +301,207 @@ forms.forEach(item => {
             closeModal();
         }, 4000);
 
-        // fetch('https://jsonplaceholder.typicode.com/todos/1')
-        //     .then(response => response.json())
-        //     .then(json => console.log(json));
+        fetch('http://localhost:3000/menu')
+            .then(data => data.json())
+            .then(res => console.log(res));
     }
+
+
+    //Sliders 
+
+    const slides = document.querySelectorAll('.offer__slide'),
+            slider = document.querySelector('.offer__slider'),
+            prevArrow = document.querySelector('.offer__slider-prev'),
+            nextArrow = document.querySelector('.offer__slider-next'),
+            total = document.querySelector('#total'),
+            current = document.querySelector('#current'),
+            slidesWrapper= document.querySelector('.offer__slider-wrapper'),
+            slidesField = document.querySelector('.offer__slider-inner'),
+            width = window.getComputedStyle(slidesWrapper).width;
+        
+    let slideIndex = 1;
+    let offset = 0;
+
+      if (slides.length < 10) {
+         total.textContent = `0${slides.length}`;
+         current.textContent = `0${slideIndex}`;
+     } else {
+          total.textContent = slides.length;
+          current.textContent = slideIndex;
+        }
+
+
+    slidesField.style.width = 100 * slides.length +'%';
+    slidesField.style.display = 'flex';
+    slidesField.style.transition = '0.5s all';
+
+    slidesWrapper.style.overflow = 'hidden';
+
+    slides.forEach((slide) => {
+        slide.style.width = width;
+    });
+
+    slider.style.position = 'relative';
+
+
+    const indicators = document.createElement('ol'),
+        dots = [];
+    indicators.classList.add('carousel-indicators');
+
+    indicators.style.cssText = `
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 15;
+        display: flex;
+        justify-content: center;
+        margin-right: 15%;
+        margin-left: 15%;
+        list-style: none;
+    `;
+
+    slider.append(indicators);
+
+    for (let i = 0; i < slides.length; i++) {
+        const dot = document.createElement('li');
+        dot.setAttribute('data-slide-to', i + 1);
+        dot.style.cssText= `
+                box-sizing: content-box;
+            flex: 0 1 auto;
+            width: 30px;
+            height: 6px;
+            margin-right: 3px;
+            margin-left: 3px;
+            cursor: pointer;
+            background-color: #fff;
+            background-clip: padding-box;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            opacity: .5;
+            transition: opacity .6s ease;
+        `;
+        if (i == 0) {
+            dot.style.opacity = 1;
+        }
+        indicators.append(dot);
+        dots.push(dot);
+    }
+
+    nextArrow.addEventListener('click', () => {
+        if (offset == +width.slice(0, width.length - 2) * (slides.length - 1)){
+            offset = 0;
+        } else {
+            offset += +width.slice(0, width.length - 2);
+        }
+
+        slidesField.style.transform = `translateX(-${offset}px)`;
+        
+        if (slideIndex == slides.length) {
+            slideIndex =1;
+        } else {
+            slideIndex++;
+        }
+
+        if(slides.length < 10) {
+            current.textContent = `0${slideIndex}`;
+        } else {
+            current.textContent = slideIndex;
+        }
+
+        dots.forEach((dot) => dot.style.opacity = '.5');
+        dots[slideIndex - 1].style.opacity =1;
+    });
+    prevArrow.addEventListener('click', () => {
+        if (offset == 0 ){
+            offset = +width.slice(0, width.length - 2) * (slides.length - 1)
+        } else {
+            offset -= +width.slice(0, width.length - 2);
+        }
+        slidesField.style.transform = `translateX(-${offset}px)`;
+
+        if (slideIndex == 1) {
+            slideIndex = slides.length;
+        } else {
+            slideIndex--;
+        }
+
+        if(slides.length < 10) {
+            current.textContent = `0${slideIndex}`;
+        } else {
+            current.textContent = slideIndex;
+        }
+        dots.forEach((dot) => {
+            dot.style.opacity = '.5';
+        });
+        dots[slideIndex - 1].style.opacity =1;
+    });
+
+    dots.forEach(dot => {
+        dot.addEventListener('click', (e) => {
+            const slideTo = e.target.getAttribute('data-slide-to');
+
+            slideIndex= slideTo;
+
+            offset = width.slice(0, width.length - 2) * (slideTo - 1);
+            slidesField.style.transform = `translateX(-${offset}px)`;
+
+            
+            if(slides.length < 10) {
+                current.textContent = `0${slideIndex}`;
+            } else {
+                current.textContent = slideIndex;
+            }
+
+            dots.forEach((dot) =>  dot.style.opacity = '.5');
+            dots[slideIndex - 1].style.opacity =1;
+            
+        });
+    })
+
+                                            //         showSlide(slideIndex);
+                                                    
+                                            // if (slides.length < 10) {
+                                            //     total.textContent = `0${slides.length}`;
+                                            // } else {
+                                            //     total.textContent = slides.length;
+                                            // }
+
+                                            // function showSlide(n) {
+                                            //     if(n > slides.length){
+                                            //         slideIndex = 1;
+                                            //     }
+
+                                            //     if (n < 1) {
+                                            //         slideIndex = slides.length;
+                                            //     }
+                                                
+                                            //     slides.forEach (item => item.style.display = 'none');
+
+                                            //     slides[slideIndex -1].style.display = 'block';
+
+                                            //     if (slides.length < 10) {
+                                            //         current.textContent = `0${slideIndex}`;
+                                            //     } else {
+                                            //         current.textContent = slideIndex;
+                                            //     }
+
+                                            // }
+
+                                            // function plusSlides(n) {
+                                            //     showSlide(slideIndex +=n);
+                                            // }
+
+
+                                            // prevArrow.addEventListener('click', () => {
+                                            //     plusSlides(-1);
+                                            // });
+
+                                            // nextArrow.addEventListener('click', () => {
+                                            //     plusSlides(1);
+                                            // });
+    
+    
+
+
 });
