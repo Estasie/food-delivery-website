@@ -1,5 +1,8 @@
-function forms() {
-    const forms= document.querySelectorAll('form');
+import {closeModal, openModal} from './modalFrames';
+import {postData} from '../services/services';
+
+function forms(formSelector, modalTimerId) {
+    const forms= document.querySelectorAll(formSelector);
 
     const message = {
         loading: 'img/form/original.svg',
@@ -40,14 +43,13 @@ function bindPostData(form) {
         .then(data => {
                 console.log(data);
                 showThanksModal(message.success);
-                form.reset();
                 statusMessage.remove();
         }).catch(() => {
             showThanksModal(message.failure);
         }).finally(() => {
             form.reset();
         });
-        request.send(json);
+        
         // request.addEventListener('load', () => {
         //     if (request.status === 200) {
         //         console.log(request.response);
@@ -68,7 +70,7 @@ function showThanksModal(message) {
    
     prevModalDialog.classList.add('hide');
 
-    openModal();
+    openModal('.modal', modalTimerId);
 
 
     const thanksModal = document.createElement('div');
@@ -85,7 +87,7 @@ function showThanksModal(message) {
         thanksModal.remove();
         prevModalDialog.classList.add('show');
         prevModalDialog.classList.remove('hide');
-        closeModal();
+        closeModal('.modal');
     }, 4000);
 
     fetch('http://localhost:3000/menu')
@@ -95,4 +97,4 @@ function showThanksModal(message) {
 
 }
 
-module.exports = forms;
+export default forms;

@@ -1,12 +1,12 @@
-function sliders() {
-        const slides = document.querySelectorAll('.offer__slide'),
-        slider = document.querySelector('.offer__slider'),
-        prevArrow = document.querySelector('.offer__slider-prev'),
-        nextArrow = document.querySelector('.offer__slider-next'),
-        total = document.querySelector('#total'),
-        current = document.querySelector('#current'),
-        slidesWrapper= document.querySelector('.offer__slider-wrapper'),
-        slidesField = document.querySelector('.offer__slider-inner'),
+function sliders({container, slide, nextArrow, prevArrow, totalCounter, currentCounter, wrapper, field}) {
+        const slides = document.querySelectorAll(slide),
+        slider = document.querySelector(container),
+        prev = document.querySelector(prevArrow),
+        next = document.querySelector(nextArrow),
+        total = document.querySelector(totalCounter),
+        current = document.querySelector(currentCounter),
+        slidesWrapper= document.querySelector(wrapper),
+        slidesField = document.querySelector(field),
         width = window.getComputedStyle(slidesWrapper).width;
 
     let slideIndex = 1;
@@ -78,7 +78,7 @@ function sliders() {
     dots.push(dot);
     }
 
-    nextArrow.addEventListener('click', () => {
+    next.addEventListener('click', () => {
     if (offset == replaceWords(width) * (slides.length - 1)){
         offset = 0;
     } else {
@@ -102,7 +102,7 @@ function sliders() {
     dots.forEach((dot) => dot.style.opacity = '.5');
     dots[slideIndex - 1].style.opacity =1;
     });
-    prevArrow.addEventListener('click', () => {
+    prev.addEventListener('click', () => {
     if (offset == 0 ){
         offset = replaceWords(width) * (slides.length - 1)
     } else {
@@ -155,7 +155,7 @@ function sliders() {
 
 }
 
-module.exports = sliders;
+export default sliders;
 
 
 
